@@ -1,0 +1,1 @@
+[![Build Status](https://travis-ci.org/rjrudman/LinqQueryInjector.svg?branch=master)](https://travis-ci.org/rjrudman/LinqQueryInjector)
