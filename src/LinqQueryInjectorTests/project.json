@@ -4,12 +4,14 @@
 		"debugType": "portable"
 	},
 	"dependencies": {
-	"System.Linq.Queryable": "4.3.0",
-	"System.Runtime.InteropServices": "4.3.0"
+	"NUnit": "3.5.0",
+	"LinqQueryInjector": "1.0.0-*",
+	"dotnet-test-nunit": "3.4.0-beta-3",
 	},
 	"buildOptions": {
-		"warningsAsErrors": true
+		
 	},
+	"testRunner": "nunit",
 	"frameworks": {
 		"netcoreapp1.0": {
 			"imports": [
@@ -24,4 +26,4 @@
 		"win8-x64": {},
 		"win7-x64": {}
 	}
-	}
+}
