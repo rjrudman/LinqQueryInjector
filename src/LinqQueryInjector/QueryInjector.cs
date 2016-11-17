@@ -1,24 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using LinqQueryInjector.Builders;
 
 namespace LinqQueryInjector
 {
-	public interface IEncountered<out TEncounteredType>
-	{
-		void ReplaceWith<TReturnType>(Func<TEncounteredType, TReturnType> expr);
-	}
-
-	public class Encountered<TEncounteredType> : IEncountered<TEncounteredType>
-	{
-		public void ReplaceWith<TReturnType>(Func<TEncounteredType, TReturnType> expr)
-		{
-			
-		}
-	}
 	public static class QueryInjector
     {
-		public static IEncountered<T> WhenEncountering<T>()
-		{
-			return new Encountered<T>();
-		}
+		private static readonly List<IReplaceRule> _replaceRules = new List<IReplaceRule>();
+	    public static IEnumerable<IReplaceRule> ReplaceRules => _replaceRules;
+
+		public static void RegisterGlobal(params Func<IQueryInjectorBuilder, IReplaceRule>[] replaceRules)
+	    {
+			var builder = new QueryInjectorBuilder();
+		    var encounterObjs = replaceRules.Select(encounterFunc => encounterFunc(builder)).ToList();
+			lock(_replaceRules)
+				_replaceRules.AddRange(encounterObjs);
+	    }
     }
 }
