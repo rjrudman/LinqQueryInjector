@@ -13,9 +13,9 @@ namespace LinqQueryInjector.Builders
 
 	public class ReplaceRule<TEncounteredType> : ReplaceRule, IReplaceRule<TEncounteredType>
 	{
-		public ReplaceRule(Expression<Func<IQueryable<TEncounteredType>, IQueryable<TEncounteredType>>> expr)
+		public ReplaceRule(Expression<Func<TEncounteredType, TEncounteredType>> expr)
 		{
-			ReplaceType = typeof(IQueryable<TEncounteredType>);
+			ReplaceType = typeof(TEncounteredType);
 			ReplaceWithExpr = expr;
 		}
 
