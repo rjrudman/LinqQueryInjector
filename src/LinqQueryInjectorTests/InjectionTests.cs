@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq;
 using NUnit.Framework;
 
 namespace LinqQueryInjector
@@ -11,8 +9,10 @@ namespace LinqQueryInjector
 		[Test]
 	    public void TestBasicInjection()
 		{
-
-			QueryInjector.WhenEncountering<IQueryable<int>>().ReplaceWith(coll => coll.Where(i => i % 2 == 0));
+			QueryInjector.RegisterGlobal(
+					ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(q => q.Where(i => i % 2 == 0)),
+					ib => ib.WhenEncountering<IQueryable<string>>().ReplaceWith(q => q.Where(s => s == "Rob"))
+				);
 		}
     }
 }
