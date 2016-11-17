@@ -3,10 +3,11 @@
 	"buildOptions": {
 		"debugType": "portable"
 	},
-	"dependencies": {
-	"System.Linq.Queryable": "4.3.0",
-	"System.Runtime.InteropServices": "4.3.0"
-	},
+  "dependencies": {
+    "System.Linq.Queryable": "4.3.0",
+    "System.Runtime.InteropServices": "4.3.0",
+    "System.Threading": "4.3.0"
+  },
 	"buildOptions": {
 		"warningsAsErrors": true
 	},
