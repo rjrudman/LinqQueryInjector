@@ -18,6 +18,9 @@ namespace LinqQueryInjector
 
 		public override Expression Visit(Expression node)
 		{
+			if (node == null)
+				return null;
+			
 			var match = _replaceRules.FirstOrDefault(rr => rr.ReplaceType.GetTypeInfo().IsAssignableFrom(node.Type));
 			if (match != null)
 			{
@@ -25,7 +28,15 @@ namespace LinqQueryInjector
 				var secondResult = new InvokeInliner().Inline(result);
 				return secondResult;
 			}
+
 			return base.Visit(node);
+		}
+
+		protected override Expression VisitLambda<T>(Expression<T> node)
+		{
+			//We don't want to visit the parameter definitions
+			var bodyResult = Visit(node.Body);
+			return Expression.Lambda(bodyResult, node.Parameters);
 		}
 	}
 }

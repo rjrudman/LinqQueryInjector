@@ -6,6 +6,6 @@ namespace LinqQueryInjector.Builders
 {
 	public interface IEncountered<TEncounteredType>
 	{
-		IReplaceRule<TEncounteredType> ReplaceWith(Expression<Func<IQueryable<TEncounteredType>, IQueryable<TEncounteredType>>> expr);
+		IReplaceRule<TEncounteredType> ReplaceWith(Expression<Func<TEncounteredType, TEncounteredType>> expr);
 	}
 }

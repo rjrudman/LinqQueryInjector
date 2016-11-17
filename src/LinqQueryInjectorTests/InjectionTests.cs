@@ -10,7 +10,7 @@ namespace LinqQueryInjector
 	    public void TestBasicInjectionint()
 		{
 			QueryInjector.RegisterGlobal(
-					ib => ib.WhenEncountering<int>().ReplaceWith(q => q.Where(i => i % 2 == 0))
+					ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(q => q.Where(i => i % 2 == 0))
 				);
 
 			var query = new [] {1, 2, 3, 4, 5}.AsInjectableQueryable();
@@ -22,12 +22,24 @@ namespace LinqQueryInjector
 		public void TestBasicInjectionString()
 		{
 			QueryInjector.RegisterGlobal(
-					ib => ib.WhenEncountering<string>().ReplaceWith(s => new [] {"replaced!"}.AsQueryable())
+					ib => ib.WhenEncountering<IQueryable<string>>().ReplaceWith(s => new [] {"replaced!"}.AsQueryable())
 				);
 
 			var query = new[] {"a", "b", "c"}.AsInjectableQueryable().ToList();
 
 			Assert.True(new[] { "replaced!" }.SequenceEqual(query));
+		}
+
+		[Test]
+		public void TestBasicInjectionStringLiteral()
+		{
+			QueryInjector.RegisterGlobal(
+					ib => ib.WhenEncountering<string>().ReplaceWith(s => "rob")
+				);
+
+			var query = new[] { "a", "b", "c" }.AsQueryable().Where(s => s == "rob").AsInjectableQueryable().ToList();
+
+			Assert.True(new[] { "a", "b", "c" }.SequenceEqual(query));
 		}
 	}
 }
