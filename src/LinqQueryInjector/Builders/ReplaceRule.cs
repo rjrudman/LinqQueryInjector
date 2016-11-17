@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace LinqQueryInjector.Builders
@@ -10,11 +11,11 @@ namespace LinqQueryInjector.Builders
 		public Expression ReplaceWithExpr { get; protected set; }
 	}
 
-	public class ReplaceRule<TEncounteredType, TReturnType> : ReplaceRule, IReplaceRule<TEncounteredType>
+	public class ReplaceRule<TEncounteredType> : ReplaceRule, IReplaceRule<TEncounteredType>
 	{
-		public ReplaceRule(Expression<Func<TEncounteredType, TReturnType>> expr)
+		public ReplaceRule(Expression<Func<IQueryable<TEncounteredType>, IQueryable<TEncounteredType>>> expr)
 		{
-			ReplaceType = typeof(TEncounteredType);
+			ReplaceType = typeof(IQueryable<TEncounteredType>);
 			ReplaceWithExpr = expr;
 		}
 
