@@ -5,6 +5,12 @@ namespace LinqQueryInjector
 {
     public class BasicQueryableTests
     {
+		[SetUp]
+	    public void Setup()
+	    {
+			QueryInjector.ClearGlobals();
+		}
+
 	    [Test]
 	    public void CanIterateEnumerable()
 	    {

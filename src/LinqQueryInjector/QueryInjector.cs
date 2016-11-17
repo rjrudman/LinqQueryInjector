@@ -17,5 +17,11 @@ namespace LinqQueryInjector
 			lock(_replaceRules)
 				_replaceRules.AddRange(encounterObjs);
 	    }
+
+	    public static void ClearGlobals()
+	    {
+		    lock(_replaceRules)
+				_replaceRules.Clear();
+	    }
     }
 }

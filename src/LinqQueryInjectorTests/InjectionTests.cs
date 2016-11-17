@@ -6,6 +6,12 @@ namespace LinqQueryInjector
 	[TestFixture]
     public class InjectionTests
     {
+		[SetUp]
+		public void Setup()
+		{
+			QueryInjector.ClearGlobals();
+		}
+
 		[Test]
 	    public void TestBasicInjectionint()
 		{
