@@ -47,5 +47,42 @@ namespace LinqQueryInjector
 
 			Assert.True(new[] { "a", "b", "c" }.SequenceEqual(query));
 		}
-	}
+
+		[Test]
+		public void TestChainingLINQ()
+		{
+			QueryInjector.RegisterGlobal(
+					ib => ib.WhenEncountering<string>().ReplaceWith(s => "rob")
+				);
+
+			var query = new[] { "a", "b", "c" }.AsInjectableQueryable().Where(s => s == "rob").ToList();
+
+			Assert.True(new[] { "a", "b", "c" }.SequenceEqual(query));
+		}
+		
+		private class Student
+	    {
+		    public string Name { get; set; }
+		    public bool Deleted { get; set; }
+	    }
+		
+	    [Test]
+		public void TestObjectFilters()
+		{
+			QueryInjector.RegisterGlobal(
+				ib => ib.WhenEncountering<IQueryable<Student>>().ReplaceWith(students => students.Where(student => !student.Deleted))
+			);
+
+			var myStudentSet = new[]
+			{
+				new Student {Name = "A", Deleted = false},
+				new Student {Name = "B", Deleted = true},
+				new Student {Name = "C", Deleted = false},
+				new Student {Name = "D", Deleted = true},
+				new Student {Name = "E", Deleted = false},
+			}.AsInjectableQueryable();
+			
+			Assert.AreEqual(new [] { "A", "C", "E"}, myStudentSet.Select(s => s.Name));
+		}
+    }
 }

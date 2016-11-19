@@ -41,7 +41,7 @@ namespace LinqQueryInjector
 
 		public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
 		{
-			return (IQueryable<TElement>) CreateTypedInjectableQueryable(expression);
+			return (IQueryable<TElement>) CreateTypedInjectableQueryable(expression, true);
 		}
 
 		public object Execute(Expression expression)
@@ -68,7 +68,7 @@ namespace LinqQueryInjector
 			{
 				var visitor = new InjectableQueryVisitor(QueryInjector.ReplaceRules);
 				expr = visitor.Visit(expr);
-				WrappedQueryable = CreateTypedInjectableQueryable(expr);
+				WrappedQueryable = CreateTypedInjectableQueryable(expr, false);
 			}
 				
 
@@ -76,11 +76,11 @@ namespace LinqQueryInjector
 			return expr;
 		}
 
-		private IQueryable CreateTypedInjectableQueryable(Expression expr)
+		private IQueryable CreateTypedInjectableQueryable(Expression expr, bool requiresInjection)
 		{
 			var wrappedQueryable = WrappedProvider.CreateQuery(expr);
 			var result = (InjectableQueryable)Activator.CreateInstance(typeof(InjectableQueryable<>).MakeGenericType(wrappedQueryable.ElementType), wrappedQueryable);
-			result.RequiresInjection = false;
+			result.RequiresInjection = requiresInjection;
 			return result;
 		}
 	}
