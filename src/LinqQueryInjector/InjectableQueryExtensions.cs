@@ -1,6 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using LinqQueryInjector.Builders;
+using LinqQueryInjector.Helpers;
 
 namespace LinqQueryInjector
 {
@@ -36,6 +40,34 @@ namespace LinqQueryInjector
 				return injectableQueryable;
 
 			return source.AsQueryable().AsInjectableQueryable();
+		}
+		
+		public static IQueryable<T> RegisterInject<T>(this IQueryable<T> source, params Func<IQueryInjectorBuilder, IReplaceRule>[] replaceRules)
+		{
+			if (replaceRules == null)
+				throw new ArgumentNullException(nameof(replaceRules));
+
+			return source.Provider.CreateQuery<T>(Expression.Call(
+				null,
+				MethodHelper.GetMethodInfoOf(() => RegisterInject(
+					default(IQueryable<T>),
+					default(Func<IQueryInjectorBuilder, IReplaceRule>[]))),
+					new[] { source.Expression, Expression.Constant(replaceRules) }
+				));
+		}
+
+		public static IQueryable RegisterInject(this IQueryable source, params Func<IQueryInjectorBuilder, IReplaceRule>[] replaceRules)
+		{
+			if (replaceRules == null)
+				throw new ArgumentNullException(nameof(replaceRules));
+
+			return source.Provider.CreateQuery(Expression.Call(
+				null,
+				MethodHelper.GetMethodInfoOf(() => RegisterInject(
+					default(IQueryable),
+					default(Func<IQueryInjectorBuilder, IReplaceRule>[]))),
+					new[] { source.Expression, Expression.Constant(replaceRules) }
+				));
 		}
 	}
 }

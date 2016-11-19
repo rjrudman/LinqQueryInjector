@@ -47,6 +47,43 @@ namespace LinqQueryInjector
 
 			Assert.True(new[] { "a", "b", "c" }.SequenceEqual(query));
 		}
+		
+		[Test]
+		public void TestInjectionOnQueryable()
+		{
+			var query = new[] { "a", "b", "c" }
+				.AsInjectableQueryable()
+				.RegisterInject(
+					ib => ib.WhenEncountering<IQueryable<string>>().ReplaceWith(strings => strings.Where(s => s == "a"))
+				)
+				.ToList();
+
+			Assert.True(new[] { "a" }.SequenceEqual(query));
+		}
+
+
+	    [Test]
+	    public void TestInjectionScoped()
+	    {
+		    var query = new[] {1, 2, 3}
+			    .AsInjectableQueryable()
+			    .RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(i => i.Where(ii => ii % 2 == 0)))
+			    .Concat(new[] {5});
+
+		    Assert.True(new[] {2, 5}.SequenceEqual(query));
+	    }
+
+		[Test]
+		public void TestInjectionScoped2()
+		{
+			var query = new[] { 1, 2, 3 }
+				.AsInjectableQueryable()
+				.RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(i => i.Where(ii => ii % 2 == 0)))
+				.Concat(new[] { 5 })
+				.RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(i => i.Where(ii => ii % 2 == 0)));
+
+			Assert.True(new[] { 2 }.SequenceEqual(query));
+		}
 
 		[Test]
 		public void TestChainingLINQ()
@@ -84,5 +121,5 @@ namespace LinqQueryInjector
 			
 			Assert.AreEqual(new [] { "A", "C", "E"}, myStudentSet.Select(s => s.Name));
 		}
-    }
+	}
 }

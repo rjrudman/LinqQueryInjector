@@ -6,6 +6,11 @@ using System.Linq.Expressions;
 
 namespace LinqQueryInjector
 {
+	public interface IInjectableQueryable
+	{
+		Expression GetInjectedExpression();
+	}
+
 	internal class InjectableQueryable<T> : InjectableQueryable, IQueryable<T>
 	{
 		private IEnumerable<T> WrappedTypeEnumerable => (IEnumerable<T>) WrappedQueryable;
@@ -17,7 +22,7 @@ namespace LinqQueryInjector
 			return WrappedTypeEnumerable.GetEnumerator();
 		}
 	}
-	internal class InjectableQueryable : IQueryable, IQueryProvider
+	internal class InjectableQueryable : IQueryable, IQueryProvider, IInjectableQueryable
 	{
 		protected IQueryable WrappedQueryable;
 		private IEnumerable WrappedEnumerable => WrappedQueryable;
@@ -56,13 +61,15 @@ namespace LinqQueryInjector
 			return WrappedProvider.Execute<TResult>(expression);
 		}
 
+		Expression IInjectableQueryable.GetInjectedExpression() => InjectQuery(Expression);
+
 		IEnumerator IEnumerable.GetEnumerator()
 		{
 			InjectQuery(Expression);
 			return WrappedEnumerable.GetEnumerator();
 		}
 		
-		protected Expression InjectQuery(Expression expr)
+		internal Expression InjectQuery(Expression expr)
 		{
 			if (RequiresInjection)
 			{

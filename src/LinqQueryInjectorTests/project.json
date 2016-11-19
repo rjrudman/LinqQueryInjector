@@ -3,11 +3,12 @@
 	"buildOptions": {
 		"debugType": "portable"
 	},
-	"dependencies": {
-	"NUnit": "3.5.0",
-	"LinqQueryInjector": "1.0.0-*",
-	"dotnet-test-nunit": "3.4.0-beta-3",
-	},
+  "dependencies": {
+    "NUnit": "3.5.0",
+    "LinqQueryInjector": "1.0.0-*",
+    "LINQExpressionComparer": "1.0.1",
+    "dotnet-test-nunit": "3.4.0-beta-3",
+  },
 	"buildOptions": {
 		
 	},
