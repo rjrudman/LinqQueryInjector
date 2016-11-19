@@ -25,7 +25,7 @@ namespace LinqQueryInjector
 			if (match != null)
 			{
 				var result = Expression.Invoke(match.ReplaceWithExpr, node);
-				var secondResult = new InvokeInlinerVisitor().Inline(result);
+				var secondResult = result.InlineInvokes();
 				return secondResult;
 			}
 
