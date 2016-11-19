@@ -4,7 +4,7 @@
 		"debugType": "portable"
 	},
   "dependencies": {
-    "InvokeInliner": "1.0.1",
+    "InvokeInliner": "1.0.2",
     "System.Linq.Queryable": "4.3.0",
     "System.Runtime.InteropServices": "4.3.0",
     "System.Threading": "4.3.0"
