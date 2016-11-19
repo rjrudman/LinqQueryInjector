@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using InvokeInliner;
 using LinqQueryInjector.Builders;
-using LinqQueryInjector.Visitors;
 
 namespace LinqQueryInjector
 {
@@ -25,7 +25,7 @@ namespace LinqQueryInjector
 			if (match != null)
 			{
 				var result = Expression.Invoke(match.ReplaceWithExpr, node);
-				var secondResult = new InvokeInliner().Inline(result);
+				var secondResult = new InvokeInlinerVisitor().Inline(result);
 				return secondResult;
 			}
 
