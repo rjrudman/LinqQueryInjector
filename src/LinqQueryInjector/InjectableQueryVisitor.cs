@@ -25,15 +25,16 @@ namespace LinqQueryInjector
 			if (!IsExpressionInjectionCall(node) && _replaceRulesContext.Count > 0)
 			{
 				var replaceRules = _replaceRulesContext.Peek();
-				var match = replaceRules.FirstOrDefault(rr => rr.ReplaceType.GetTypeInfo().IsAssignableFrom(node.Type));
-				if (match != null)
-				{
-					var innerParsed = base.Visit(node);
+				var matches = replaceRules.Where(rr => rr.ReplaceType.GetTypeInfo().IsAssignableFrom(node.Type)).ToList();
 
-					var result = Expression.Invoke(match.ReplaceWithExpr, innerParsed);
-					var secondResult = result.InlineInvokes();
-					return secondResult;
+				var currentExpr = base.Visit(node);
+
+				foreach (var match in matches)
+				{	
+					var result = Expression.Invoke(match.ReplaceWithExpr, currentExpr);
+					currentExpr = result.InlineInvokes();
 				}
+				return currentExpr;
 			}
 			
 			return base.Visit(node);

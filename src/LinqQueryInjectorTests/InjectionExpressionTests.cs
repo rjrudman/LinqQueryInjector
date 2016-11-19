@@ -110,7 +110,7 @@ namespace LinqQueryInjector
 				.RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(collection => collection.Where(i => i % 2 == 0)))
 				 as IInjectableQueryable;
 
-			var expected = initialCollection.Where(i => i % 2 == 0).Concat(secondCollection).Where(i => i % 2 == 0);
+			var expected = initialCollection.Where(i => i % 2 == 0).Where(i => i % 2 == 0).Concat(secondCollection).Where(i => i % 2 == 0);
 
 			Assert.NotNull(actualQuery);
 			ExpressionEqualityComparer.AssertExpressionsEqual(expected.Expression, actualQuery.GetInjectedExpression());

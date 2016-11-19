@@ -77,8 +77,7 @@ namespace LinqQueryInjector
 				expr = visitor.Visit(expr);
 				WrappedQueryable = CreateTypedInjectableQueryable(expr, false);
 			}
-				
-
+			
 			RequiresInjection = false;
 			return expr;
 		}
