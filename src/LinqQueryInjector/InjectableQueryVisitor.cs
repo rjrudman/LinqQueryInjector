@@ -73,7 +73,7 @@ namespace LinqQueryInjector
 			//First argument is the source
 			var secondArgument = (ConstantExpression)node.Arguments[1];
 
-			var currentRules = new List<IReplaceRule>();
+			var currentRules = new List<IReplaceRule>(_replaceRulesContext.Count > 0 ? _replaceRulesContext.Peek() : Enumerable.Empty<IReplaceRule>());
 			var replaceRules = secondArgument.Value as Func<IQueryInjectorBuilder, IReplaceRule>[];
 			var builder = new QueryInjectorBuilder();
 			var encounterObjs = replaceRules.Select(encounterFunc => encounterFunc(builder)).ToList();
