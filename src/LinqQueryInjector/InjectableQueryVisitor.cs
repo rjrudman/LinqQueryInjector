@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -13,7 +12,7 @@ namespace LinqQueryInjector
 	{
 		class InjectedItem { public object Key; public object Value; }
 
-	    private Stack<List<IReplaceRule>> _replaceRulesContext = new Stack<List<IReplaceRule>>();
+	    private readonly Stack<List<IReplaceRule>> _replaceRulesContext = new Stack<List<IReplaceRule>>();
 		private readonly Stack<InjectedItem> _injectedItems = new Stack<InjectedItem>();
 
 	    internal InjectableQueryVisitor(IEnumerable<IReplaceRule> replaceRulesContext)
@@ -35,7 +34,7 @@ namespace LinqQueryInjector
 			{
 				var matches = _replaceRulesContext.Peek()
 					.Where(m => m.ReplaceType.GetTypeInfo().IsAssignableFrom(currentExpr.Type))
-					.Where(m => m.ExpressionTypes.Contains(currentExpr.NodeType))
+					.Where(m => m.AcceptExpression?.Invoke(node) ?? m.ExpressionTypes.Contains(currentExpr.NodeType))
 					.ToList();
 				
 				if (matches.Any())

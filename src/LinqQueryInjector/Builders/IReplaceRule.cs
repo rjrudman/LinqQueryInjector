@@ -7,6 +7,7 @@ namespace LinqQueryInjector.Builders
 	{
 		Type ReplaceType { get; }
 		ExpressionType[] ExpressionTypes { get; }
+		Func<Expression, bool> AcceptExpression { get; }
 		bool IsRequired { get; }
 		Expression ReplaceWithExpr { get; }
 	}

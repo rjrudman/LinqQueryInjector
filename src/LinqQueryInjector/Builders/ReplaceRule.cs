@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace LinqQueryInjector.Builders
 {
 	public class ReplaceRule : IReplaceRule
 	{
+		public Func<Expression, bool> AcceptExpression { get { return null; } }
 		public ExpressionType[] ExpressionTypes
 		{
 			get { return new[] {ExpressionType.Constant, ExpressionType.Parameter, ExpressionType.Constant, ExpressionType.NewArrayInit}; }
