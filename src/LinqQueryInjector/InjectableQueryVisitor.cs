@@ -30,29 +30,28 @@ namespace LinqQueryInjector
 			if (IsMetaCall(node))
 				return currentExpr;
 
-			if (_replaceRulesContext.Count > 0)
-			{
-				var matches = _replaceRulesContext.Peek()
-					.Where(m => m.ReplaceType.GetTypeInfo().IsAssignableFrom(currentExpr.Type))
-					.Where(m => m.AcceptExpression?.Invoke(node) ?? m.ExpressionTypes.Contains(currentExpr.NodeType))
-					.ToList();
-				
-				if (matches.Any())
-				{	
-					_replaceRulesContext.Push(new List<IReplaceRule>());
-					foreach (var match in matches)
-					{
-						var replaceWithExpr = Visit(match.ReplaceWithExpr);
+			if (_replaceRulesContext.Count <= 0)
+				return currentExpr;
 
-						var result = Expression.Invoke(replaceWithExpr, currentExpr);
-						currentExpr = result.InlineInvokes();
-					}
-					_replaceRulesContext.Pop();
-					return currentExpr;
-				}
+			var matches = _replaceRulesContext.Peek()
+				.Where(m => m.ReplaceType.GetTypeInfo().IsAssignableFrom(currentExpr.Type))
+				.Where(m => m.AcceptExpression?.Invoke(node) ?? m.ExpressionTypes.Contains(currentExpr.NodeType))
+				.ToList();
+
+			if (!matches.Any())
+				return currentExpr;
+
+			_replaceRulesContext.Push(new List<IReplaceRule>());
+			foreach (var match in matches)
+			{
+				var replaceWithExpr = Visit(match.ReplaceWithExpr);
+
+				var result = Expression.Invoke(replaceWithExpr, currentExpr);
+				currentExpr = result.InlineInvokes();
 			}
-			
-			return base.Visit(node);
+			_replaceRulesContext.Pop();
+
+			return currentExpr;
 		}
 
 		protected override Expression VisitLambda<T>(Expression<T> node)
