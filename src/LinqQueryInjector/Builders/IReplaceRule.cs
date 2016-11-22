@@ -6,6 +6,7 @@ namespace LinqQueryInjector.Builders
 	public interface IReplaceRule
 	{
 		Type ReplaceType { get; }
+		ExpressionType[] ExpressionTypes { get; }
 		bool IsRequired { get; }
 		Expression ReplaceWithExpr { get; }
 	}

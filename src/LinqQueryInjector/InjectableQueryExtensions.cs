@@ -69,5 +69,40 @@ namespace LinqQueryInjector
 					new[] { source.Expression, Expression.Constant(replaceRules) }
 				));
 		}
+
+	    public static IQueryable<T> InjectWith<T, TKeyType, TResultType>(this IQueryable<T> source, TKeyType key, TResultType value)
+	    {
+			if (key == null)
+				throw new ArgumentNullException(nameof(key));
+			if (value == null)
+				throw new ArgumentNullException(nameof(value));
+
+		    return source.Provider.CreateQuery<T>(Expression.Call(
+			    null,
+			    MethodHelper.GetMethodInfoOf(() => InjectWith(
+				    default(IQueryable<T>),
+					default(TKeyType),
+				    default(TResultType))),
+			    new[] {source.Expression, Expression.Constant(key, typeof(TKeyType)), Expression.Constant(value, typeof(TResultType)) }
+		    ));
+	    }
+
+		public static IQueryable InjectWith<TKeyType, TResultType>(this IQueryable source, TKeyType key, TResultType value)
+		{
+			if (key == null)
+				throw new ArgumentNullException(nameof(key));
+			if (value == null)
+				throw new ArgumentNullException(nameof(value));
+
+			return source.Provider.CreateQuery(Expression.Call(
+				null,
+				MethodHelper.GetMethodInfoOf(() => InjectWith(
+					default(IQueryable),
+					default(TKeyType),
+					default(TResultType))),
+				new[] { source.Expression, Expression.Constant(key, typeof(TKeyType)), Expression.Constant(value, typeof(TResultType)) }
+			));
+		}
+
 	}
 }

@@ -6,6 +6,11 @@ namespace LinqQueryInjector.Builders
 {
 	public class ReplaceRule : IReplaceRule
 	{
+		public ExpressionType[] ExpressionTypes
+		{
+			get { return new[] {ExpressionType.Constant, ExpressionType.Parameter, ExpressionType.Constant, ExpressionType.NewArrayInit}; }
+		}
+
 		public Type ReplaceType { get; protected set; }
 		public bool IsRequired { get; protected set; }
 		public Expression ReplaceWithExpr { get; protected set; }

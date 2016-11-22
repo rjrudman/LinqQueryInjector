@@ -29,7 +29,23 @@ namespace LinqQueryInjector
 			Assert.NotNull(actualQuery);
 			ExpressionEqualityComparer.AssertExpressionsEqual(expected.Expression, actualQuery.GetInjectedExpression());
 		}
-		
+
+
+		[Test]
+		public void TestBasicInjectionOnWhereInt()
+		{
+			QueryInjector.RegisterGlobal(
+					ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(q => q.Where(i => i % 2 == 0))
+				);
+
+			var collection = new[] { 1, 2, 3, 4, 5 }.AsQueryable();
+			var actualQuery = collection.Where(i => i > 3).AsInjectableQueryable() as IInjectableQueryable;
+			var expected = collection.Where(i => i % 2 == 0).Where(i => i > 3);
+
+			Assert.NotNull(actualQuery);
+			ExpressionEqualityComparer.AssertExpressionsEqual(expected.Expression, actualQuery.GetInjectedExpression());
+		}
+
 		[Test]
 		public void TestBasicInjectionString()
 		{
@@ -84,7 +100,7 @@ namespace LinqQueryInjector
 		public void TestInjectionScoped()
 		{
 			var initialCollection = new[] { 1, 2, 3 }.AsQueryable();
-			var secondCollection = new[] { 5 };
+			var secondCollection = new[] { 5 }.AsQueryable();
 
 			var actualQuery = initialCollection
 				.AsInjectableQueryable()
@@ -101,16 +117,37 @@ namespace LinqQueryInjector
 		public void TestInjectionScoped2()
 		{
 			var initialCollection = new[] { 1, 2, 3 }.AsQueryable();
-			var secondCollection = new[] { 5 };
+			var secondCollection = new[] { 5 }.AsQueryable();
 
 			var actualQuery = initialCollection
 				.AsInjectableQueryable()
 				.RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(collection => collection.Where(i => i % 2 == 0)))
 				.Concat(secondCollection)
-				.RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(collection => collection.Where(i => i % 2 == 0)))
+				.RegisterInject(ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(collection => collection.Where(i => i % 3 == 0)))
 				 as IInjectableQueryable;
 
-			var expected = initialCollection.Where(i => i % 2 == 0).Where(i => i % 2 == 0).Concat(secondCollection).Where(i => i % 2 == 0);
+			var expected = initialCollection.Where(i => i % 2 == 0).Where(i => i % 3 == 0).Concat(secondCollection.Where(i => i % 3 == 0));
+
+			Assert.NotNull(actualQuery);
+			ExpressionEqualityComparer.AssertExpressionsEqual(expected.Expression, actualQuery.GetInjectedExpression());
+		}
+
+	    [Test]
+	    public void TestInjectionParameter()
+	    {
+			var initialCollection = new[] { 1, 2, 3 }.AsQueryable();
+
+			QueryInjector.RegisterGlobal(
+					ib => ib.WhenEncountering<IQueryable<int>>().ReplaceWith(collection => collection.Where(c => c == Inject<int>.Value("testKey")))
+				);
+
+		    var actualQuery =
+			    initialCollection
+					.AsInjectableQueryable()
+					.InjectWith("testKey", 5)
+						as IInjectableQueryable;
+
+		    var expected = initialCollection.Where(c => c == 5);
 
 			Assert.NotNull(actualQuery);
 			ExpressionEqualityComparer.AssertExpressionsEqual(expected.Expression, actualQuery.GetInjectedExpression());

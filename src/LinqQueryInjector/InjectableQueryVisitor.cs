@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,7 +11,10 @@ namespace LinqQueryInjector
 {
     internal class InjectableQueryVisitor : ExpressionVisitor
 	{
-	    private readonly Stack<List<IReplaceRule>> _replaceRulesContext = new Stack<List<IReplaceRule>>();
+		class InjectedItem { public object Key; public object Value; }
+
+	    private Stack<List<IReplaceRule>> _replaceRulesContext = new Stack<List<IReplaceRule>>();
+		private readonly Stack<InjectedItem> _injectedItems = new Stack<InjectedItem>();
 
 	    internal InjectableQueryVisitor(IEnumerable<IReplaceRule> replaceRulesContext)
 	    {
@@ -22,19 +26,31 @@ namespace LinqQueryInjector
 			if (node == null)
 				return null;
 
-			if (!IsExpressionInjectionCall(node) && _replaceRulesContext.Count > 0)
-			{
-				var replaceRules = _replaceRulesContext.Peek();
-				var matches = replaceRules.Where(rr => rr.ReplaceType.GetTypeInfo().IsAssignableFrom(node.Type)).ToList();
+			var currentExpr = base.Visit(node);
 
-				var currentExpr = base.Visit(node);
-
-				foreach (var match in matches)
-				{	
-					var result = Expression.Invoke(match.ReplaceWithExpr, currentExpr);
-					currentExpr = result.InlineInvokes();
-				}
+			if (IsMetaCall(node))
 				return currentExpr;
+
+			if (_replaceRulesContext.Count > 0)
+			{
+				var matches = _replaceRulesContext.Peek()
+					.Where(m => m.ReplaceType.GetTypeInfo().IsAssignableFrom(currentExpr.Type))
+					.Where(m => m.ExpressionTypes.Contains(currentExpr.NodeType))
+					.ToList();
+				
+				if (matches.Any())
+				{	
+					_replaceRulesContext.Push(new List<IReplaceRule>());
+					foreach (var match in matches)
+					{
+						var replaceWithExpr = Visit(match.ReplaceWithExpr);
+
+						var result = Expression.Invoke(replaceWithExpr, currentExpr);
+						currentExpr = result.InlineInvokes();
+					}
+					_replaceRulesContext.Pop();
+					return currentExpr;
+				}
 			}
 			
 			return base.Visit(node);
@@ -54,35 +70,101 @@ namespace LinqQueryInjector
 					.Where(m => m.Name == "RegisterInject")
 			);
 
-		private static bool IsExpressionInjectionCall(Expression node)
+		private static readonly HashSet<MethodInfo> _injectWithMethods =
+			new HashSet<MethodInfo>(
+				typeof(InjectableQueryExtensions)
+					.GetTypeInfo()
+					.GetMethods()
+					.Where(m => m.Name == "InjectWith")
+			);
+
+		private static bool IsInMethods(Expression node, HashSet<MethodInfo> methods)
+		{
+			var methodCallExpr = node as MethodCallExpression;
+			if (methodCallExpr == null)
+				return false;
+			
+			var baseMethod = methodCallExpr.Method.IsGenericMethod ? methodCallExpr.Method.GetGenericMethodDefinition() : methodCallExpr.Method;
+			return methods.Contains(baseMethod);
+		}
+
+		private static bool IsMetaCall(Expression node)
+		{
+			return IsRegisterCall(node) || IsInjectWithCall(node) || IsInjectPlaceholderCall(node);
+		}
+		
+		private static bool IsRegisterCall(Expression node)
+		{
+			return IsInMethods(node, _registerMethods);
+		}
+
+		private static bool IsInjectWithCall(Expression node)
+		{
+			return IsInMethods(node, _injectWithMethods);
+		}
+
+		private static bool IsInjectPlaceholderCall(Expression node)
 		{
 			var methodCallExpr = node as MethodCallExpression;
 			if (methodCallExpr == null)
 				return false;
 
-			var baseMethod = methodCallExpr.Method.IsGenericMethod ? methodCallExpr.Method.GetGenericMethodDefinition() : methodCallExpr.Method;
-			return _registerMethods.Contains(baseMethod)
-			       && methodCallExpr.Arguments.Count == 2
-			       & methodCallExpr.Arguments[1] is ConstantExpression;
+			return
+				methodCallExpr.Method.Name == "Value"
+				&& methodCallExpr.Method.DeclaringType.IsConstructedGenericType
+				&& methodCallExpr.Method.DeclaringType.GetGenericTypeDefinition() == typeof(Inject<>);
 		}
 
 		protected override Expression VisitMethodCall(MethodCallExpression node)
 		{
-			if (!IsExpressionInjectionCall(node))
-				return base.VisitMethodCall(node);
-			
-			//First argument is the source
-			var secondArgument = (ConstantExpression)node.Arguments[1];
+			if (IsRegisterCall(node))
+				return TranslateRegisterCall(node);
+			if (IsInjectWithCall(node))
+				return TranslateInjectWithCall(node);
+			if (IsInjectPlaceholderCall(node))
+				return TranslateInjectPlaceholder(node);
 
-			var currentRules = new List<IReplaceRule>(_replaceRulesContext.Count > 0 ? _replaceRulesContext.Peek() : Enumerable.Empty<IReplaceRule>());
+			return base.VisitMethodCall(node);
+		}
+
+		private Expression TranslateRegisterCall(MethodCallExpression node)
+		{
+			//First argument is the source
+			var secondArgument = (ConstantExpression) node.Arguments[1];
 			var replaceRules = secondArgument.Value as Func<IQueryInjectorBuilder, IReplaceRule>[];
+
 			var builder = new QueryInjectorBuilder();
-			var encounterObjs = replaceRules.Select(encounterFunc => encounterFunc(builder)).ToList();
-			currentRules.AddRange(encounterObjs);
-			_replaceRulesContext.Push(currentRules);
+			var encounterObjs = replaceRules.Select(encounterFunc => encounterFunc(builder)).Concat(_replaceRulesContext.Peek());
+
+			_replaceRulesContext.Push(new List<IReplaceRule>(encounterObjs));
 			var returnExpression = Visit(node.Arguments[0]);
 			_replaceRulesContext.Pop();
+
 			return returnExpression;
+		}
+
+		private Expression TranslateInjectWithCall(MethodCallExpression node)
+		{
+			var keyExpr = node.Arguments[1] as ConstantExpression;
+			if (keyExpr == null)
+				throw new InvalidOperationException($"Key must be a Constant Expression, but found ${node.Arguments[1].GetType()}");
+
+			_injectedItems.Push(new InjectedItem { Key = keyExpr.Value, Value = node.Arguments[2] });
+			return Visit(node.Arguments[0]);
+		}
+
+		private Expression TranslateInjectPlaceholder(MethodCallExpression node)
+		{
+			var keyExpr = node.Arguments[0] as ConstantExpression;
+			if (keyExpr == null)
+				throw new InvalidOperationException("Encountered an inject placeholder, but value was not a Constant Expression");
+
+			var matchingInject = _injectedItems.FirstOrDefault(ii => ii.Key == keyExpr.Value);
+			if (matchingInject == null)
+				throw new InvalidOperationException($"Encountered an inject placeholder, but no value was provided for {keyExpr.Value}");
+
+			var constExpr = matchingInject.Value as Expression;
+			return constExpr;
 		}
 	}
 }
